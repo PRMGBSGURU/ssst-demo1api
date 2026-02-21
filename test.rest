@@ -1,0 +1,50 @@
+### Base URL
+@baseUrl = http://localhost:3000
+@contentType = application/json
+
+### 1. Health Check
+GET {{baseUrl}}/
+
+### 2. Login - Admin User
+POST {{baseUrl}}/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+### 3. Login - Regular User
+POST {{baseUrl}}/login
+Content-Type: {{contentType}}
+
+{
+  "username": "user",
+  "password": "user123"
+}
+
+### 4. Login - Invalid Credentials (Will fail)
+POST {{baseUrl}}/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "wrongpassword"
+}
+
+### 5. Access Protected Route (Replace TOKEN with actual token from login)
+GET {{baseUrl}}/protected
+Authorization: Bearer TOKEN
+
+### 6. Get User Profile (Protected)
+GET {{baseUrl}}/profile
+Authorization: Bearer TOKEN
+
+### Notes:
+###
+### 1. First, run the "Login - Admin User" request to get a token
+### 2. Copy the token value from the response
+### 3. Replace "TOKEN" in the protected route requests with the actual token
+### 4. You can use VS Code REST Client extension to run these requests
+###    Install: "REST Client" by Huachao Mao
+###
