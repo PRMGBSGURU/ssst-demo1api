@@ -103,7 +103,65 @@ Content-Type: application/json
 
 ---
 
-### 3. Protected Route
+### 3. Database User Login (POST /userlogin)
+Authenticate user against MySQL database and receive JWT token.
+
+```
+POST /userlogin
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "emailid": "user@example.com",
+  "password": "user123"
+}
+```
+
+**Database Setup Required:**
+1. Ensure MySQL is running
+2. Create database `ssst-demo1` (or use provided SQL script)
+3. Create `Users` table with columns: `EmailID` and `Password`
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "emailid": "user@example.com",
+    "username": "Regular User"
+  }
+}
+```
+
+**Response (Error - User Not Found):**
+```json
+{
+  "success": false,
+  "message": "Invalid email or password"
+}
+```
+
+**Response (Error - Wrong Password):**
+```json
+{
+  "success": false,
+  "message": "Invalid email or password"
+}
+```
+
+**Notes:**
+- Passwords can be stored as plain text or bcrypt hashed
+- The endpoint automatically detects hashed passwords (starting with `$2`)
+- Returns same format as `/login` endpoint for consistency
+- Token expires in 1 hour
+
+---
+
+### 4. Protected Route
 ```
 GET /protected
 Authorization: Bearer <token>
@@ -126,7 +184,7 @@ Requires valid JWT token in Authorization header.
 
 ---
 
-### 4. Get User Profile (Protected)
+### 5. Get User Profile (Protected)
 ```
 GET /profile
 Authorization: Bearer <token>
@@ -151,14 +209,21 @@ Requires valid JWT token.
 
 ### Using cURL:
 
-**1. Login:**
+**1. Login (In-Memory Users):**
 ```bash
 curl -X POST http://localhost:3000/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"password123"}'
 ```
 
-**2. Access Protected Route:**
+**2. Login (MySQL Database):**
+```bash
+curl -X POST http://localhost:3000/userlogin \
+  -H "Content-Type: application/json" \
+  -d '{"emailid":"user@example.com","password":"user123"}'
+```
+
+**3. Access Protected Route:**
 ```bash
 curl -X GET http://localhost:3000/protected \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
@@ -166,13 +231,19 @@ curl -X GET http://localhost:3000/protected \
 
 ### Using Postman:
 
-1. **POST /login**
+1. **POST /login** (In-Memory Authentication)
    - Set method to POST
    - URL: `http://localhost:3000/login`
    - Body (JSON): `{ "username": "admin", "password": "password123" }`
    - Copy the `token` from response
 
-2. **GET /protected**
+2. **POST /userlogin** (MySQL Database Authentication)
+   - Set method to POST
+   - URL: `http://localhost:3000/userlogin`
+   - Body (JSON): `{ "emailid": "user@example.com", "password": "user123" }`
+   - Copy the `token` from response
+
+3. **GET /protected**
    - Set method to GET
    - URL: `http://localhost:3000/protected`
    - Headers: Add `Authorization: Bearer <token>`
@@ -180,11 +251,11 @@ curl -X GET http://localhost:3000/protected \
 ### Using JavaScript (Fetch API):
 
 ```javascript
-// Login
-const loginResponse = await fetch('http://localhost:3000/login', {
+// Database Login
+const loginResponse = await fetch('http://localhost:3000/userlogin', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ username: 'admin', password: 'password123' })
+  body: JSON.stringify({ emailid: 'user@example.com', password: 'user123' })
 });
 
 const { token } = await loginResponse.json();
@@ -196,6 +267,50 @@ const protectedResponse = await fetch('http://localhost:3000/protected', {
 
 const data = await protectedResponse.json();
 console.log(data);
+```
+
+## Database Setup (MySQL)
+
+### Prerequisites:
+- MySQL Server running locally
+- Database `ssst-demo1` created
+
+### Setup Steps:
+
+1. **Open MySQL Command Line or MySQL Workbench**
+
+2. **Run the provided SQL script:**
+   - Copy contents from `database-setup.sql`
+   - Execute in your MySQL client
+
+3. **Or manually create the table:**
+```sql
+CREATE DATABASE IF NOT EXISTS ssst-demo1;
+
+USE ssst-demo1;
+
+CREATE TABLE Users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  EmailID VARCHAR(255) UNIQUE NOT NULL,
+  Password VARCHAR(255) NOT NULL,
+  FirstName VARCHAR(100),
+  LastName VARCHAR(100),
+  UserName VARCHAR(100),
+  Status VARCHAR(50) DEFAULT 'active',
+  CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO Users (EmailID, Password, FirstName, LastName, UserName) VALUES
+('admin@example.com', 'admin123', 'Admin', 'User', 'admin'),
+('user@example.com', 'user123', 'Regular', 'User', 'user');
+```
+
+4. **Update `.env` file with your MySQL credentials:**
+```
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password_here
+DB_NAME=ssst-demo1
 ```
 
 ## JWT Token Details
@@ -228,11 +343,15 @@ The API validates tokens by checking:
 
 ```
 ssst-demo1api/
-├── index.js              # Main application file
-├── package.json          # Project dependencies and scripts
-├── .env                  # Environment variables
-├── .gitignore           # Git ignore rules
-└── README.md            # This file
+├── index.js                    # Main application file with all endpoints
+├── db.js                       # MySQL database connection pool
+├── package.json                # Project dependencies and scripts
+├── .env                        # Environment variables (local, not in git)
+├── .env.example                # Template for environment variables
+├── .gitignore                  # Git ignore rules
+├── test.rest                   # REST client test file for VS Code
+├── database-setup.sql          # SQL script to create database and table
+└── README.md                   # This file
 ```
 
 ## Security Considerations

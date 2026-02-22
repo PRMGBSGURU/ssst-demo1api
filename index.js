@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const userloginRouter = require('./userlogin');
+const userregistrationRouter = require('./userregistration');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,6 +10,12 @@ const SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 // Middleware
 app.use(express.json());
+
+// Mount userlogin routes (isolated endpoint)
+app.use('/', userloginRouter);
+
+// Mount userregistration routes (isolated endpoint)
+app.use('/', userregistrationRouter);
 
 // Sample user database (in production, use a real database)
 const users = [
