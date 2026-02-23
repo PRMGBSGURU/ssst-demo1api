@@ -12,6 +12,7 @@ const router = express.Router();
  *   "surname": "Doe",
  *   "lastname": "John",
  *   "emailid": "john.doe@example.com",
+ *   "gender": "Male",
  *   "mobilenumber": "+911234567890",
  *   "whatsappnumber": "+911234567890",
  *   "password": "securePassword123"
@@ -25,7 +26,8 @@ const router = express.Router();
  *     "ssstid": "SSST123456",
  *     "emailid": "john.doe@example.com",
  *     "surname": "Doe",
- *     "lastname": "John"
+ *     "lastname": "John",
+ *     "gender": "Male"
  *   }
  * }
  * 
@@ -36,13 +38,22 @@ const router = express.Router();
  * }
  */
 router.post('/newregistration', async (req, res) => {
-  const { surname, lastname, emailid, mobilenumber, whatsappnumber, password } = req.body;
+  const { surname, lastname, emailid, gender, mobilenumber, whatsappnumber, password } = req.body;
 
   // Validate input
-  if (!surname || !lastname || !emailid || !password || !mobilenumber || !whatsappnumber) {
+  if (!surname || !lastname || !emailid || !gender || !password || !mobilenumber || !whatsappnumber) {
     return res.status(400).json({
       success: false,
-      message: 'All fields are required: surname, lastname, emailid, mobilenumber, whatsappnumber, password'
+      message: 'All fields are required: surname, lastname, emailid, gender, mobilenumber, whatsappnumber, password'
+    });
+  }
+
+  // Validate gender
+  const validGenders = ['Male', 'Female', 'Other'];
+  if (!validGenders.includes(gender)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Gender must be one of: Male, Female, Other'
     });
   }
 
@@ -90,8 +101,8 @@ router.post('/newregistration', async (req, res) => {
 
     // Insert user into database
     const [result] = await pool.query(
-      'INSERT INTO Users (Surname, LastName, EmailID, MobileNumber, WhatsAppNumber, SSSTID, Password) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [surname, lastname, emailid, mobilenumber, whatsappnumber, ssstid, hashedPassword]
+      'INSERT INTO Users (Surname, LastName, EmailID, Gender, MobileNumber, WhatsAppNumber, SSSTID, Password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [surname, lastname, emailid, gender, mobilenumber, whatsappnumber, ssstid, hashedPassword]
     );
 
     // Return success response
@@ -104,6 +115,7 @@ router.post('/newregistration', async (req, res) => {
         emailid: emailid,
         surname: surname,
         lastname: lastname,
+        gender: gender,
         mobilenumber: mobilenumber,
         whatsappnumber: whatsappnumber
       }

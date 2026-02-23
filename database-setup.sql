@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS `Users` (
   `ID` INT,
   `Surname` VARCHAR(100),
   `LastName` VARCHAR(100),
+  `Gender` VARCHAR(20),
   `EmailID` VARCHAR(255) UNIQUE NOT NULL,
   `Password` VARCHAR(255) NOT NULL,
   `MobileNumber` VARCHAR(20),

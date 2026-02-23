@@ -49,6 +49,7 @@ Content-Type: {{contentType}}
   "surname": "Doe",
   "lastname": "John",
   "emailid": "john.doe@example.com",
+  "gender": "Male",
   "mobilenumber": "+911234567890",
   "whatsappnumber": "+911234567890",
   "password": "SecurePassword123!"
@@ -62,6 +63,7 @@ Content-Type: {{contentType}}
   "surname": "Smith",
   "lastname": "Jane",
   "emailid": "jane.smith@example.com",
+  "gender": "Female",
   "mobilenumber": "+919876543210",
   "whatsappnumber": "+919876543210",
   "password": "AnotherSecurePass123!"
@@ -118,7 +120,101 @@ Content-Type: {{contentType}}
 ### 14. Check OTP Status for User
 GET {{baseUrl}}/passwordreset/otp-status/1
 
+### ============================================================================
+### SESSION MANAGEMENT & LOGOUT API TESTS (NEW)
+### ============================================================================
+
+### 15. Login and Create Session - Admin User
+POST {{baseUrl}}/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+### 16. Check Session Status (Use token from login #15 or #2)
+### Replace TOKEN with actual token from login response
+GET {{baseUrl}}/session-status
+Authorization: Bearer TOKEN
+
+### 17. Get All Active Sessions (Admin Endpoint)
+### Shows all currently active sessions in the system
+GET {{baseUrl}}/sessions
+Authorization: Bearer TOKEN
+
+### 18. Logout Current Session (Use token from any login)
+### This invalidates the current session and logs out the user
+POST {{baseUrl}}/logout
+Content-Type: {{contentType}}
+Authorization: Bearer TOKEN
+
+### 19. Logout All User Sessions
+### Invalidates all active sessions for the current user
+### Useful when user suspects unauthorized access
+POST {{baseUrl}}/logout-all
+Content-Type: {{contentType}}
+Authorization: Bearer TOKEN
+
+### 20. Try Accessing Protected Route with Logged Out Token (Should Fail)
+### This should return 401 "Session expired or not found"
+GET {{baseUrl}}/protected
+Authorization: Bearer TOKEN
+
+### ============================================================================
+### SESSION MANAGEMENT - INACTIVITY TIMEOUT TEST
+### ============================================================================
+### 
+### Test Scenario: Verify 15-minute inactivity logout
+### 
+### 1. Login (request #2 or #15) - Save the token
+### 2. Wait 15+ minutes without making any API calls
+### 3. Try accessing protected resource (request #20)
+### 4. Expected: Session should be auto-logged out
+### 5. You should see 401 error: "Session expired or not found"
+###
+### OR view active sessions (request #17) to see inactivityMinutes counter
+### When inactivityMinutes >= 15, the session will be removed on next cleanup
+###
+
 ### Notes:
+###
+### Session Management Features:
+### 1. Inactivity Timeout: 15 minutes (900 seconds)
+### 2. Automatic Cleanup: Every 5 minutes
+### 3. Activity Tracking: Updated on every API request
+### 4. Session Creation: Includes sessionId, timestamp, IP address
+###
+### Testing with VS Code REST Client:
+### 1. Login to get a fresh token (request #2)
+### 2. Copy token from response
+### 3. In other requests, replace "TOKEN" with the actual token
+### 4. Paste token in Authorization header: Bearer <token>
+### 5. Use Ctrl+Alt+R (or Cmd+Alt+R on Mac) to send request
+###
+### Session Status Fields:
+### - sessionId: Unique session identifier
+### - inactivityMinutes: Minutes since last activity
+### - remainingMinutesBeforeLogout: Minutes until auto-logout
+### - timeoutMinutes: Total timeout duration (15 minutes)
+###
+### Logout Responses:
+### Success:
+### {
+###   "success": true,
+###   "message": "Logout successful",
+###   "data": {
+###     "sessionId": "sess_...",
+###     "sessionDuration": 1200 (seconds)
+###   }
+### }
+###
+### Error (Session not found):
+### {
+###   "success": false,
+###   "message": "Session expired or not found. Please login again."
+### }
+###
 ###
 ### For /userlogin endpoint:
 ### 1. Make sure MySQL database "ssst-demo1" exists locally

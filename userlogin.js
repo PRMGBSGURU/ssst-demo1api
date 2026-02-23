@@ -2,9 +2,10 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('./db');
+const sessionManager = require('./sessionManager');
+const { SECRET_KEY, JWT_CONFIG } = require('./config');
 
 const router = express.Router();
-const SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 /**
  * POST /userlogin - Database login endpoint with MySQL validation
@@ -20,6 +21,7 @@ const SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
  *   "success": true,
  *   "message": "Login successful",
  *   "token": "JWT_TOKEN_HERE",
+ *   "sessionId": "sess_1708689045123_a1b2c3d4e",
  *   "user": {
  *     "emailid": "user@example.com",
  *     "username": "Regular User"
@@ -86,13 +88,22 @@ router.post('/userlogin', async (req, res) => {
         username: user.FirstName || user.LastName || user.UserName || 'User'
       },
       SECRET_KEY,
-      { expiresIn: '1h' }
+      JWT_CONFIG
     );
+
+    // Create session for the user (required for protected routes)
+    const userData = {
+      id: user.id || user.ID,
+      emailid: user.EmailID,
+      username: user.FirstName || user.LastName || user.UserName || 'User'
+    };
+    const session = sessionManager.createSession(token, userData);
 
     res.json({
       success: true,
       message: 'Login successful',
       token: token,
+      sessionId: session.sessionId,
       user: {
         emailid: user.EmailID,
         username: user.FirstName || user.LastName || user.UserName || 'User'
