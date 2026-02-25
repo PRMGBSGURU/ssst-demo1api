@@ -3,6 +3,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const userloginRouter = require('./userlogin');
 const userregistrationRouter = require('./userregistration');
+const createqrcodeRouter = require('./createqrcode');
 const sessionManager = require('./sessionManager');
 const { SECRET_KEY } = require('./config');
 
@@ -23,6 +24,9 @@ app.use('/', userloginRouter);
 
 // Mount userregistration routes (isolated endpoint)
 app.use('/', userregistrationRouter);
+
+// Mount isolated QR code creation endpoint
+app.use('/', createqrcodeRouter);
 
 // Sample user database (in production, use a real database)
 const users = [
@@ -367,7 +371,9 @@ app.listen(PORT, () => {
   
   console.log(`🔄 Other:`);
   console.log(`   GET    /userlogin               - Database user login`);
-  console.log(`   POST   /userregistration        - Register new user\n`);
+  console.log(`   POST   /newregistration         - Register new user`);
+  console.log(`   POST   /createqrcode            - Create QR code (Isolated API)`);
+  console.log(`                                    Inputs: mobilenumber, ssstid\n`);
   
   console.log(`⏱️  Session Configuration:`);
   console.log(`   • Inactivity Timeout: 15 minutes`);
